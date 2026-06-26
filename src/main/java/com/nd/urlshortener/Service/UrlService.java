@@ -4,10 +4,13 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.nd.urlshortener.Entity.UrlMapping;
 import com.nd.urlshortener.Repository.UrlRepository;
+import com.nd.urlshortener.dto.UrlStatsResponse;
 
 @Service
 public class UrlService {
@@ -40,6 +43,7 @@ public String createShortUrl(String originalUrl){
         UrlMapping mapping=new UrlMapping();
         mapping.setOrriginalUrl(originalUrl);
         mapping.setShortCode(shortCode);
+        mapping.setClickCount(0L);
         urlRepo.save(mapping);
         return "http://localhost:8080/"+shortCode;
         }
@@ -48,6 +52,19 @@ public String createShortUrl(String originalUrl){
     public String getOriginalUrl(String shortCode){
         Optional<UrlMapping> mapping=urlRepo.findByShortCode(shortCode);
         if(!mapping.isPresent()){return null;}
+        mapping.get().setClickCount(mapping.get().getClickCount()==null ?1L :mapping.get().getClickCount()+1);
+        urlRepo.save(mapping.get());
+        // System.out.println(mapping.get().getClickCount());
         return mapping.get().getOrriginalUrl();
+    }
+    //Stats 
+    public UrlStatsResponse getStats(String shortCode) {
+        Optional<UrlMapping>mapping=urlRepo.findByShortCode(shortCode);
+        if(mapping.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No Url found with this short Code");
+        }
+      return new UrlStatsResponse(mapping.get().getOrriginalUrl(),
+                                    mapping.get().getShortCode(),
+                                    mapping.get().getClickCount());
     }
 }

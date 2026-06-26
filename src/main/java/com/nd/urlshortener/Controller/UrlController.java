@@ -14,11 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nd.urlshortener.Service.UrlService;
 import com.nd.urlshortener.dto.UrlRequest;
 import com.nd.urlshortener.dto.UrlResponse;
+import com.nd.urlshortener.dto.UrlStatsResponse;
 
 @RestController
 @RequestMapping("/api")
 public class UrlController {
-    private UrlService urlService;
+    private final UrlService urlService;
     public UrlController(UrlService urlService){
         this.urlService=urlService;
     }
@@ -30,10 +31,16 @@ public class UrlController {
     @GetMapping("/{shortCode}")
     public ResponseEntity<Void>redirect(@PathVariable String shortCode){
         String originalUrl=urlService.getOriginalUrl(shortCode);
+        // System.out.println(originalUrl);
         if(originalUrl==null)return ResponseEntity.notFound().build();      
         return ResponseEntity
         .status(HttpStatus.FOUND)
         .location(URI.create(originalUrl))
         .build();
+    }
+    @GetMapping("/stats/{shortCode}")
+    public ResponseEntity<UrlStatsResponse>getStats(@PathVariable String shortCode ){
+        UrlStatsResponse stats=urlService.getStats(shortCode);
+        return ResponseEntity.ok(stats);
     }
 }

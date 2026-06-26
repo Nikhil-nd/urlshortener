@@ -16,7 +16,8 @@ public class UrlMapping {
 
     private String shortCode;
     
-
+    private Long clickCount;
+    
     public UrlMapping() {
     }
 
@@ -40,6 +41,14 @@ public class UrlMapping {
     public void setShortCode(String shortCode) {
         this.shortCode = shortCode;
     }
+    public Long getClickCount() {
+        return clickCount;
+    }
+
+    public void setClickCount(Long clickCount) {
+        this.clickCount = clickCount;
+    }
+
 
 
 
