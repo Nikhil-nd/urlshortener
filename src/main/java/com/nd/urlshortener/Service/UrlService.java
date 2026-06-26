@@ -1,5 +1,6 @@
 package com.nd.urlshortener.Service;
 
+import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ public class UrlService {
     public UrlService(UrlRepository urlRepo){
         this.urlRepo=urlRepo;
     }
+    //generating the shortCode
     private String generateShortCode(){
         String chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder sb=new StringBuilder();
@@ -25,7 +27,12 @@ public class UrlService {
                     random.nextInt(chars.length())));
         }
     return sb.toString();}
-    public String createShortUrl(String originalUrl){
+    //creating the Shortcode
+public String createShortUrl(String originalUrl){
+    Optional<UrlMapping> existingUrl=urlRepo.findByOriginalUrl(originalUrl);
+    if(existingUrl.isPresent()){  
+        return "http://localhost:8080/"+existingUrl.get().getShortCode();
+    }else{
         String shortCode=generateShortCode();
         while(urlRepo.existsByShortCode(shortCode)){
             shortCode=generateShortCode();
@@ -35,5 +42,12 @@ public class UrlService {
         mapping.setShortCode(shortCode);
         urlRepo.save(mapping);
         return "http://localhost:8080/"+shortCode;
+        }
+    }
+    //redirecting to original Url
+    public String getOriginalUrl(String shortCode){
+        Optional<UrlMapping> mapping=urlRepo.findByShortCode(shortCode);
+        if(!mapping.isPresent()){return null;}
+        return mapping.get().getOrriginalUrl();
     }
 }
