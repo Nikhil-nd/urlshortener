@@ -25,8 +25,9 @@ public class UrlController {
     }
     @PostMapping("/shorten")
     public UrlResponse shorten(@RequestBody UrlRequest request){
-        String shortUrl=urlService.createShortUrl(request.getUrl());
+        String shortUrl=urlService.createShortUrl(request);
         return new UrlResponse(shortUrl);
+        
     }
     @GetMapping("/{shortCode}")
     public ResponseEntity<Void>redirect(@PathVariable String shortCode){

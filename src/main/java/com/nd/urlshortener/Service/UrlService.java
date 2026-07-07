@@ -3,22 +3,22 @@ package com.nd.urlshortener.Service;
 import java.util.Optional;
 import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.nd.urlshortener.Entity.UrlMapping;
 import com.nd.urlshortener.Repository.UrlRepository;
+import com.nd.urlshortener.dto.UrlRequest;
 import com.nd.urlshortener.dto.UrlStatsResponse;
 
 @Service
 public class UrlService {
-    
     private final UrlRepository urlRepo;
     public UrlService(UrlRepository urlRepo){
         this.urlRepo=urlRepo;
     }
+
     //generating the shortCode
     private String generateShortCode(){
         String chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -31,22 +31,32 @@ public class UrlService {
         }
     return sb.toString();}
     //creating the Shortcode
-public String createShortUrl(String originalUrl){
-    Optional<UrlMapping> existingUrl=urlRepo.findByOriginalUrl(originalUrl);
+public String createShortUrl(UrlRequest request){
+    String customAlias=request.getCustomAlias();
+    String shortCode;
+    Optional<UrlMapping> existingUrl=urlRepo.findByOriginalUrl(request.getUrl());
     if(existingUrl.isPresent()){  
         return "http://localhost:8080/"+existingUrl.get().getShortCode();
-    }else{
-        String shortCode=generateShortCode();
+    }else if(customAlias==null || customAlias.isBlank()) {
+        shortCode=generateShortCode();
         while(urlRepo.existsByShortCode(shortCode)){
             shortCode=generateShortCode();
         }
-        UrlMapping mapping=new UrlMapping();
-        mapping.setOrriginalUrl(originalUrl);
+        
+        }
+        else{
+           shortCode=request.getCustomAlias();
+           if(urlRepo.existsByShortCode(shortCode)){
+            throw new RuntimeException("Alias already exists");
+           }
+        }
+         UrlMapping mapping=new UrlMapping();
+        mapping.setOrriginalUrl(request.getUrl());
         mapping.setShortCode(shortCode);
         mapping.setClickCount(0L);
         urlRepo.save(mapping);
         return "http://localhost:8080/"+shortCode;
-        }
+       
     }
     //redirecting to original Url
     public String getOriginalUrl(String shortCode){
