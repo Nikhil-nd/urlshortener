@@ -9,8 +9,8 @@ import com.nd.urlshortener.Entity.UrlMapping;
 
 @Repository
 public interface  UrlRepository extends JpaRepository<UrlMapping, Long> {
-    Optional<UrlMapping>findByShortCode(String shortCode);
-    Optional<UrlMapping>findByOriginalUrl(String originalUrl);
+    Optional<UrlMapping> findByShortCode(String shortCode);
+    Optional<UrlMapping> findByOriginalUrl(String originalUrl);
     boolean existsByShortCode(String shortCode);
     
 }

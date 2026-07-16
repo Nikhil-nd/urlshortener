@@ -3,6 +3,7 @@ package com.nd.urlshortener.Service;
 import java.util.Optional;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,10 +12,14 @@ import com.nd.urlshortener.Entity.UrlMapping;
 import com.nd.urlshortener.Repository.UrlRepository;
 import com.nd.urlshortener.dto.UrlRequest;
 import com.nd.urlshortener.dto.UrlStatsResponse;
+import com.nd.urlshortener.exception.AliasAlreadyExistsException;
+import com.nd.urlshortener.exception.UrlNotFoundException;
 
 @Service
 public class UrlService {
     private final UrlRepository urlRepo;
+    @Value("${app.base-url}")
+    private String baseUrl;
     public UrlService(UrlRepository urlRepo){
         this.urlRepo=urlRepo;
     }
@@ -36,7 +41,7 @@ public String createShortUrl(UrlRequest request){
     String shortCode;
     Optional<UrlMapping> existingUrl=urlRepo.findByOriginalUrl(request.getUrl());
     if(existingUrl.isPresent()){  
-        return "http://localhost:8080/"+existingUrl.get().getShortCode();
+        return baseUrl+existingUrl.get().getShortCode();
     }else if(customAlias==null || customAlias.isBlank()) {
         shortCode=generateShortCode();
         while(urlRepo.existsByShortCode(shortCode)){
@@ -47,7 +52,7 @@ public String createShortUrl(UrlRequest request){
         else{
            shortCode=request.getCustomAlias();
            if(urlRepo.existsByShortCode(shortCode)){
-            throw new RuntimeException("Alias already exists");
+            throw new AliasAlreadyExistsException("Custom alias already exists");
            }
         }
          UrlMapping mapping=new UrlMapping();
@@ -55,26 +60,30 @@ public String createShortUrl(UrlRequest request){
         mapping.setShortCode(shortCode);
         mapping.setClickCount(0L);
         urlRepo.save(mapping);
-        return "http://localhost:8080/"+shortCode;
+        return baseUrl+shortCode;
        
     }
     //redirecting to original Url
     public String getOriginalUrl(String shortCode){
-        Optional<UrlMapping> mapping=urlRepo.findByShortCode(shortCode);
-        if(!mapping.isPresent()){return null;}
-        mapping.get().setClickCount(mapping.get().getClickCount()==null ?1L :mapping.get().getClickCount()+1);
-        urlRepo.save(mapping.get());
-        // System.out.println(mapping.get().getClickCount());
-        return mapping.get().getOrriginalUrl();
+         UrlMapping mapping = urlRepo.findByShortCode(shortCode)
+            .orElseThrow(() -> new UrlNotFoundException("Short URL not found"));
+
+    mapping.setClickCount(mapping.getClickCount() + 1);
+
+    urlRepo.save(mapping);
+
+    return mapping.getOrriginalUrl();
     }
     //Stats 
     public UrlStatsResponse getStats(String shortCode) {
-        Optional<UrlMapping>mapping=urlRepo.findByShortCode(shortCode);
-        if(mapping.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No Url found with this short Code");
-        }
-      return new UrlStatsResponse(mapping.get().getOrriginalUrl(),
-                                    mapping.get().getShortCode(),
-                                    mapping.get().getClickCount());
-    }
+
+    UrlMapping mapping = urlRepo.findByShortCode(shortCode)
+            .orElseThrow(() -> new UrlNotFoundException("Short URL not found"));
+
+    return new UrlStatsResponse(
+            mapping.getOrriginalUrl(),
+            mapping.getShortCode(),
+            mapping.getClickCount()
+    );
+}
 }
