@@ -184,7 +184,7 @@ Contributions are welcome. If you plan to contribute:
 
 MIT License
 
-Copyright (c) 2026 [Your Name]
+Copyright (c) 2026 Nikhil
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
